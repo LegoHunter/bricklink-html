@@ -2,6 +2,7 @@ package com.bricklink.web.api;
 
 import com.bricklink.api.html.model.v2.WantedItem;
 import com.bricklink.api.html.model.v2.WantedList;
+import com.bricklink.web.model.Item;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.RequestBuilder;
 
@@ -25,6 +26,10 @@ public interface BricklinkWebService {
     Set<WantedItem> getWantedListItems(final String name);
 
     Set<WantedItem> getWantedListItems(final Long id);
+
+    Set<Item> getAllSetTypeCatalogItems();
+    Set<Item> getAllBookTypeCatalogItems();
+    Set<Item> getAllGearTypeCatalogItems();
 
     HttpClient getHttpClient();
 

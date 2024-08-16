@@ -22,5 +22,6 @@ public class AuthenticationResult {
         private int user_sstaus;
         private String user_profile_url;
         private int url_after_login;
+        private long user_since;
     }
 }

@@ -1,23 +1,25 @@
 package com.bricklink.web.support;
 
-import com.bricklink.api.html.model.v2.WantedItem;
-import com.bricklink.api.html.model.v2.WantedList;
-import com.bricklink.api.html.model.v2.WantedListPageAggregate;
-import com.bricklink.api.html.model.v2.WantedSearchPageAggregate;
+import com.bricklink.api.html.model.v2.*;
 import com.bricklink.web.BricklinkWebException;
 import com.bricklink.web.api.BricklinkWebService;
 import com.bricklink.web.configuration.BricklinkWebProperties;
 import com.bricklink.web.model.AuthenticationResult;
+import com.bricklink.web.model.Item;
+import com.bricklink.web.model.ItemCatalog;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.http.HttpEntity;
+import org.apache.http.NameValuePair;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -33,10 +35,10 @@ import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -44,9 +46,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -71,6 +71,65 @@ public class BricklinkWebServiceImpl implements BricklinkWebService {
         httpClient = HttpClientBuilder.create()
                                       .build();
         authenticate();
+    }
+
+    @Override
+    public Set<Item> getAllBookTypeCatalogItems() {
+        return getAllCatalogItemsForType("B");
+    }
+
+    @Override
+    public Set<Item> getAllGearTypeCatalogItems() {
+        return getAllCatalogItemsForType("G");
+    }
+
+    @Override
+    public Set<Item> getAllSetTypeCatalogItems() {
+        return getAllCatalogItemsForType("S");
+    }
+
+    public Set<Item> getAllCatalogItemsForType(final String type) {
+        Set<Item> catalogItems = Set.of();
+        // POST /catalogDownload.asp?a=a
+        URL downloadCatalogUrl = null;
+        try {
+            downloadCatalogUrl = properties.getURL("catalogDownload");
+            HttpPost downloadCatalogPost = new HttpPost(downloadCatalogUrl.toURI());
+            final List<NameValuePair> params = new ArrayList<NameValuePair>();
+            params.add(new BasicNameValuePair("viewType", "0"));
+            params.add(new BasicNameValuePair("itemType", type));
+            params.add(new BasicNameValuePair("itemTypeInv", "S"));
+            params.add(new BasicNameValuePair("itemNo", ""));
+            params.add(new BasicNameValuePair("downloadType", "X"));
+            downloadCatalogPost.setEntity(new UrlEncodedFormEntity(params));
+
+            downloadCatalogPost.setConfig(requestConfig);
+            CloseableHttpResponse response;
+
+            ByteArrayOutputStream outstream = new ByteArrayOutputStream();
+            try {
+                response = httpClient.execute(downloadCatalogPost, bricklinkSession.getHttpContext());
+                HttpEntity entity = response.getEntity();
+                if (entity != null) {
+                    entity.writeTo(outstream);
+                }
+                EntityUtils.consume(entity);
+                response.close();
+            } catch (IOException e) {
+                throw new BricklinkWebException("Unable to download catalog list [%d]".formatted(downloadCatalogUrl), e);
+            }
+            String xml = new String(outstream.toByteArray());
+
+           XmlMapper xmlMapper = new XmlMapper();
+           ItemCatalog itemCatalog = xmlMapper.readValue(xml, ItemCatalog.class);
+
+            catalogItems = itemCatalog.getItems();
+
+            response.close();
+        } catch (Exception e) {
+            throw new BricklinkWebException(e);
+        }
+        return catalogItems;
     }
 
     @Override
@@ -202,44 +261,6 @@ public class BricklinkWebServiceImpl implements BricklinkWebService {
             throw new BricklinkWebException(e);
         }
     }
-//
-//    @Override
-//    public void extractWantedList() {
-//        // GET imgAdd page
-//        URL wantedListUrl = null;
-//        try {
-//            wantedListUrl = new URL("https://www.bricklink.com/v2/wanted/search.page?type=A&wantedMoreID=7159374&sort=1&pageSize=300");
-//        } catch (MalformedURLException e) {
-//            e.printStackTrace();
-//        }
-//        HttpGet wantedListGet = new HttpGet(wantedListUrl.toString());
-//        wantedListGet.setConfig(requestConfig);
-//        CloseableHttpResponse response = null;
-//        try {
-//            response = httpClient.execute(wantedListGet, bricklinkSession.getHttpContext());
-//            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-//            HttpEntity entity = response.getEntity();
-//            if (entity != null) {
-//                entity.writeTo(byteArrayOutputStream);
-//            }
-//            String html = new String(byteArrayOutputStream.toByteArray());
-//            String unescapedHtml =  StringEscapeUtils.unescapeHtml4(html);
-//            System.out.println(html);
-//            System.out.println(unescapedHtml);
-//
-//            Pattern pattern = Pattern.compile("^.*wlJson\\s*=\\s*(.*?);.*$", Pattern.MULTILINE | Pattern.DOTALL);
-//            Matcher matcher = pattern.matcher(unescapedHtml);
-//            matcher.find();
-//            String wlJson = matcher.group(1);
-//            log.info("{}", wlJson);
-//            ObjectMapper mapper = new ObjectMapper();
-//            WantedListAggregate wantedListAggregate = mapper.readValue(wlJson, WantedListAggregate.class);
-//            EntityUtils.consume(response.getEntity());
-//            response.close();
-//        } catch (IOException e) {
-//            throw new BricklinkWebException(e);
-//        }
-//    }
 
     @Override
     public void authenticate() {

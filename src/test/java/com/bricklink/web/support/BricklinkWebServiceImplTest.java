@@ -5,6 +5,7 @@ import com.bricklink.api.html.model.v2.WantedList;
 import com.bricklink.web.api.BricklinkWebService;
 import com.bricklink.web.configuration.BricklinkWebConfiguration;
 import com.bricklink.web.configuration.BricklinkWebProperties;
+import com.bricklink.web.model.Item;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.conn.ConnectionKeepAliveStrategy;
@@ -60,6 +61,24 @@ public class BricklinkWebServiceImplTest {
 //
 //        assertThat(bricklinkSession).isNotNull();
 //    }
+
+    @Test
+    void downloadCatalogItem() {
+        StopWatch timer = new StopWatch();
+        timer.start();
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+
+            BricklinkWebService bricklinkWebService = new BricklinkWebServiceImpl(httpClientConnectionManager, properties, mapper, connectionKeepAliveStrategy);
+            bricklinkWebService.authenticate();
+
+            Set<Item> allCatalogItems = bricklinkWebService.getAllSetTypeCatalogItems();
+
+            bricklinkWebService.logout();
+        } finally {
+            timer.stop();
+        }
+    }
 
     @Test
     void extractWantedLists() {
