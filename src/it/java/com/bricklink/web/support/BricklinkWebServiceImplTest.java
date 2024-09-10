@@ -36,32 +36,6 @@ public class BricklinkWebServiceImplTest {
     @Autowired
     private BricklinkWebProperties properties;
 
-    @Autowired
-    private ObjectMapper mapper;
-
-//    @Test
-//    @Ignore
-//    public void uploadInventoryImage_authenticatesUploadsAndDoesLogout() throws Exception {
-//        BricklinkSession bricklinkSession = null;
-//        ImageScalingService imageScalingService = new ImageScalingService();
-//        StopWatch timer = new StopWatch();
-//        timer.start();
-//        try {
-//            ObjectMapper mapper = new ObjectMapper();
-//
-//            BricklinkWebService bricklinkWebService = new BricklinkWebService(httpClientConnectionManager, properties, mapper, connectionKeepAliveStrategy);
-//            bricklinkWebService.authenticate();
-//            Path scaledImagePath = imageScalingService.scale(new URL("https://farm66.static.flickr.com/65535/49527943596_c8a6b59d43_c.jpg"));
-//            bricklinkWebService.uploadInventoryImage(174935081L, scaledImagePath);
-//            bricklinkSession = bricklinkWebService.logout();
-//        } finally {
-//            timer.stop();
-//        }
-//        log.info("uploaded photo [{}] to inventory [{}] in [{}] ms", "abc", 1234567L, timer.getTotalTimeMillis());
-//
-//        assertThat(bricklinkSession).isNotNull();
-//    }
-
     @Test
     void downloadCatalogItem() {
         StopWatch timer = new StopWatch();
@@ -94,9 +68,7 @@ public class BricklinkWebServiceImplTest {
 
             assertThat(wantedLists).isNotEmpty();
 
-            wantedLists.forEach(wl -> {
-                log.info("Id: {} Name: [{}] Wanted Items Count: [{}]", wl.getId(), wl.getName(), wl.getNum());
-            });
+            wantedLists.forEach(wl -> log.info("Id: {} Name: [{}] Wanted Items Count: [{}]", wl.getId(), wl.getName(), wl.getNum()));
 
             bricklinkWebService.logout();
         } finally {
@@ -118,9 +90,7 @@ public class BricklinkWebServiceImplTest {
 
             assertThat(wantedListItems).isNotEmpty();
 
-            wantedListItems.forEach(wli -> {
-                log.info("Item No: {} Item Name: [{}] Color [{}] Wanted Quantity {} Wanted new {} ", wli.getItemNo(), wli.getItemName(), wli.getColorName(), wli.getWantedQty(), wli.getWantedNew());
-            });
+            wantedListItems.forEach(wli -> log.info("Item No: {} Item Name: [{}] Color [{}] Wanted Quantity {} Wanted new {} ", wli.getItemNo(), wli.getItemName(), wli.getColorName(), wli.getWantedQty(), wli.getWantedNew()));
 
             bricklinkWebService.logout();
         } finally {
