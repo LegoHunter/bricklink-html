@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - 'feature/**'
+      - 'develop'
 jobs:
   Feature-Branch-Maven-Deploy-Snapshot:
     runs-on: ubuntu-latest
