@@ -24,13 +24,14 @@
     <httpclient.version>4.5.13</httpclient.version>
     <lombok.version>1.18.30</lombok.version>
     <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
+    <github.organization>LegoHunter</github.organization>
   </properties>
 
   <distributionManagement>
     <repository>
       <id>github</id>
       <name>GitHub Packages</name>
-      <url>https://maven.pkg.github.com/tvattima/${project.artifactId}</url>
+      <url>https://maven.pkg.github.com/${github.organization}/${project.artifactId}</url>
     </repository>
   </distributionManagement>
 
