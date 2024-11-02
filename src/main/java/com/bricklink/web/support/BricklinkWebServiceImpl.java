@@ -270,11 +270,9 @@ public class BricklinkWebServiceImpl implements BricklinkWebService {
         this.bricklinkSession = new BricklinkSession(context);
 
         // Authenticate
-        String username = properties.getBricklink()
-                                    .getCredential()
+        String username = properties.getCredential()
                                     .getUsername();
-        String secret = properties.getBricklink()
-                                  .getCredential()
+        String secret = properties.getCredential()
                                   .getPassword();
         URL loginUrl = properties.getURL("login-logout");
         CloseableHttpResponse response = null;
