@@ -3,17 +3,18 @@ package com.bricklink.web.configuration;
 import com.bricklink.web.api.BricklinkWebService;
 import com.bricklink.web.support.BricklinkWebServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.http.HeaderElement;
-import org.apache.http.HeaderElementIterator;
-import org.apache.http.HttpHost;
-import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.conn.ConnectionKeepAliveStrategy;
-import org.apache.http.conn.HttpClientConnectionManager;
-import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
-import org.apache.http.message.BasicHeaderElementIterator;
-import org.apache.http.protocol.HTTP;
+import org.apache.hc.client5.http.ConnectionKeepAliveStrategy;
+import org.apache.hc.client5.http.impl.io.BasicHttpClientConnectionManager;
+import org.apache.hc.client5.http.io.HttpClientConnectionManager;
+import org.apache.hc.core5.http.HeaderElement;
+import org.apache.hc.core5.http.HttpHost;
+import org.apache.hc.core5.http.message.BasicHeaderElementIterator;
+import org.apache.hc.core5.util.TimeValue;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import static org.apache.http.protocol.HTTP.CONN_KEEP_ALIVE;
+import static org.apache.http.protocol.HttpCoreContext.HTTP_TARGET_HOST;
 
 @Configuration
 public class BricklinkWebConfiguration {
@@ -32,27 +33,25 @@ public class BricklinkWebConfiguration {
     public ConnectionKeepAliveStrategy connectionKeepAliveStrategy() {
         return (response, context) -> {
             // Honor 'keep-alive' header
-            HeaderElementIterator it = new BasicHeaderElementIterator(
-                    response.headerIterator(HTTP.CONN_KEEP_ALIVE));
+            BasicHeaderElementIterator it = new BasicHeaderElementIterator(response.headerIterator(CONN_KEEP_ALIVE));
             while (it.hasNext()) {
-                HeaderElement he = it.nextElement();
+                HeaderElement he = it.next();
                 String param = he.getName();
                 String value = he.getValue();
                 if (value != null && param.equalsIgnoreCase("timeout")) {
                     try {
-                        return Long.parseLong(value) * 1000;
-                    } catch(NumberFormatException ignore) {
+                        return TimeValue.ofMilliseconds(Long.parseLong(value) * 1000);
+                    } catch (NumberFormatException ignore) {
                     }
                 }
             }
-            HttpHost target = (HttpHost) context.getAttribute(
-                    HttpClientContext.HTTP_TARGET_HOST);
+            HttpHost target = (HttpHost) context.getAttribute(HTTP_TARGET_HOST);
             if ("www.bricklink.com".equalsIgnoreCase(target.getHostName())) {
                 // Keep alive for 5 seconds only
-                return 5 * 1000;
+                return TimeValue.ofMilliseconds(5 * 1000);
             } else {
                 // otherwise keep alive for 30 seconds
-                return 30 * 1000;
+                return TimeValue.ofMilliseconds(30 * 1000);
             }
         };
     }

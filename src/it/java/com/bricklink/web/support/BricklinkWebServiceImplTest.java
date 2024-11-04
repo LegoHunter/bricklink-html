@@ -8,8 +8,8 @@ import com.bricklink.web.configuration.BricklinkWebProperties;
 import com.bricklink.web.model.Item;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.http.conn.ConnectionKeepAliveStrategy;
-import org.apache.http.conn.HttpClientConnectionManager;
+import org.apache.hc.client5.http.ConnectionKeepAliveStrategy;
+import org.apache.hc.client5.http.io.HttpClientConnectionManager;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +18,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.util.StopWatch;
 
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Set;
 
@@ -153,15 +152,13 @@ public class BricklinkWebServiceImplTest {
         @Bean
         public BricklinkWebProperties bricklinkWebProperties() {
             BricklinkWebProperties properties = new BricklinkWebProperties();
-            properties.setClientConfigDir(Paths.get("C:\\Users\\tvatt\\.credentials\\bricklink"));
-            properties.setClientConfigFile(Paths.get("bricklink-web.json"));
             properties.setPool(new BricklinkWebProperties.Pool());
             properties.getPool()
-                      .setDefaultMaxPerRoute(20);
+                    .setDefaultMaxPerRoute(20);
             properties.getPool()
-                      .setMaxPerRoute(50);
+                    .setMaxPerRoute(50);
             properties.getPool()
-                      .setMaxTotal(200);
+                    .setMaxTotal(200);
             return properties;
         }
 
