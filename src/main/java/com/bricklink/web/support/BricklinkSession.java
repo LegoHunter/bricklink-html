@@ -4,7 +4,7 @@ import com.bricklink.web.model.AuthenticationResult;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
-import org.apache.hc.client5.http.protocol.HttpClientContext;
+import org.apache.http.client.protocol.HttpClientContext;
 
 @Getter
 @RequiredArgsConstructor

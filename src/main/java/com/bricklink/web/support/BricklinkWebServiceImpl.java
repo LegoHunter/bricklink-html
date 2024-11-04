@@ -16,30 +16,26 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
-import org.apache.hc.client5.http.ConnectionKeepAliveStrategy;
-import org.apache.hc.client5.http.classic.HttpClient;
-import org.apache.hc.client5.http.classic.methods.HttpGet;
-import org.apache.hc.client5.http.classic.methods.HttpPost;
-import org.apache.hc.client5.http.config.RequestConfig;
-import org.apache.hc.client5.http.cookie.BasicCookieStore;
-import org.apache.hc.client5.http.cookie.CookieStore;
-import org.apache.hc.client5.http.cookie.StandardCookieSpec;
-import org.apache.hc.client5.http.entity.UrlEncodedFormEntity;
-import org.apache.hc.client5.http.entity.mime.HttpMultipartMode;
-import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
-import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
-import org.apache.hc.client5.http.impl.classic.HttpClients;
-import org.apache.hc.client5.http.io.HttpClientConnectionManager;
-import org.apache.hc.client5.http.protocol.HttpClientContext;
-import org.apache.hc.core5.http.ClassicHttpRequest;
-import org.apache.hc.core5.http.ContentType;
-import org.apache.hc.core5.http.HttpEntity;
-import org.apache.hc.core5.http.NameValuePair;
-import org.apache.hc.core5.http.io.entity.EntityUtils;
-import org.apache.hc.core5.http.io.support.ClassicRequestBuilder;
-import org.apache.hc.core5.http.message.BasicNameValuePair;
+import org.apache.http.HttpEntity;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.CookieStore;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.CookieSpecs;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.*;
+import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.conn.ConnectionKeepAliveStrategy;
+import org.apache.http.conn.HttpClientConnectionManager;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.mime.HttpMultipartMode;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
+import org.apache.http.impl.client.BasicCookieStore;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -64,7 +60,7 @@ public class BricklinkWebServiceImpl implements BricklinkWebService {
     private CloseableHttpClient httpClient;
     private BricklinkSession bricklinkSession;
     private final RequestConfig requestConfig = RequestConfig.custom()
-            .setCookieSpec(StandardCookieSpec.RELAXED)
+            .setCookieSpec(CookieSpecs.STANDARD)
             .build();
 
     public BricklinkWebServiceImpl(HttpClientConnectionManager httpClientConnectionManager, BricklinkWebProperties properties, ObjectMapper objectMapper, ConnectionKeepAliveStrategy connectionKeepAliveStrategy) {
@@ -158,7 +154,7 @@ public class BricklinkWebServiceImpl implements BricklinkWebService {
 
         // Upload thumbnail photo to inventory item
         MultipartEntityBuilder builder = MultipartEntityBuilder.create();
-        builder.setMode(HttpMultipartMode.LEGACY);
+        builder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
 
         try {
             byte[] bytes = Files.readAllBytes(imagePath);
@@ -274,7 +270,6 @@ public class BricklinkWebServiceImpl implements BricklinkWebService {
         CookieStore cookieStore = new BasicCookieStore();
         HttpClientContext context = HttpClientContext.create();
         context.setCookieStore(cookieStore);
-        context.setRequestConfig(requestConfig);
         this.bricklinkSession = new BricklinkSession(context);
 
         // Authenticate
@@ -285,7 +280,7 @@ public class BricklinkWebServiceImpl implements BricklinkWebService {
         URL loginUrl = properties.getURL("login-logout");
         CloseableHttpResponse response = null;
         try {
-            ClassicHttpRequest login = ClassicRequestBuilder.post()
+            HttpUriRequest login = RequestBuilder.post()
                     .setUri(loginUrl.toURI())
                     .addParameter("userid", username)
                     .addParameter("password", secret)
@@ -293,6 +288,7 @@ public class BricklinkWebServiceImpl implements BricklinkWebService {
                     .addParameter("keepme_loggedin", "false")
                     .addParameter("pageid", "LOGIN")
                     .addParameter("mid", computeMID())
+                    .setConfig(requestConfig)
                     .build();
             response = httpClient.execute(login, context);
             AuthenticationResult authenticationResult = objectMapper.readValue(IOUtils.toString(response.getEntity()
@@ -360,10 +356,11 @@ public class BricklinkWebServiceImpl implements BricklinkWebService {
         response = null;
         try {
             inventoryUpdateUrl = new URL(inventoryUpdateUrlString);
-            ClassicRequestBuilder requestBuilder = ClassicRequestBuilder.post()
+            RequestBuilder requestBuilder = RequestBuilder.post()
                     .setUri(inventoryUpdateUrl.toURI());
             setInventoryUpdateFormFieldsForConditionUpdate(requestBuilder, blInventoryId, invNew, invComplete);
-            ClassicHttpRequest inventoryUpdateRequest = requestBuilder.build();
+            HttpUriRequest inventoryUpdateRequest = requestBuilder.setConfig(requestConfig)
+                    .build();
             // POST Inventory Update
             response = httpClient.execute(inventoryUpdateRequest, bricklinkSession.getHttpContext());
             EntityUtils.consume(response.getEntity());
@@ -408,7 +405,7 @@ public class BricklinkWebServiceImpl implements BricklinkWebService {
         response = null;
         try {
             inventoryUpdateUrl = new URL(inventoryUpdateUrlString);
-            ClassicRequestBuilder requestBuilder = ClassicRequestBuilder.post()
+            RequestBuilder requestBuilder = RequestBuilder.post()
                     .setUri(inventoryUpdateUrl.toURI());
             setInventoryUpdateFormFieldsForExtendedDescriptionUpdate(requestBuilder, blInventoryId, extendedDescription);
             addOldNewFormField(requestBuilder, blInventoryId, "ItemType", oldItemType, oldItemType);
@@ -416,7 +413,8 @@ public class BricklinkWebServiceImpl implements BricklinkWebService {
             addOldNewFormField(requestBuilder, blInventoryId, "ColorID", oldColorID, oldColorID);
             addOldNewFormField(requestBuilder, blInventoryId, "CatID", oldCatID, oldCatID);
             requestBuilder.addParameter("oldInvStock", "");
-            ClassicHttpRequest inventoryUpdateRequest = requestBuilder.build();
+            HttpUriRequest inventoryUpdateRequest = requestBuilder.setConfig(requestConfig)
+                    .build();
             // POST Inventory Update
             response = httpClient.execute(inventoryUpdateRequest, bricklinkSession.getHttpContext());
             EntityUtils.consume(response.getEntity());
@@ -452,18 +450,18 @@ public class BricklinkWebServiceImpl implements BricklinkWebService {
     }
 
     @Override
-    public void addOldNewFormField(ClassicRequestBuilder requestBuilder, Long inventoryId, String formFieldName, String oldValue, String newValue) {
+    public void addOldNewFormField(RequestBuilder requestBuilder, Long inventoryId, String formFieldName, String oldValue, String newValue) {
         requestBuilder.addParameter("new" + formFieldName + inventoryId, newValue);
         requestBuilder.addParameter("old" + formFieldName + inventoryId, oldValue);
     }
 
     @Override
-    public void addPlaceholderOldNewFormField(ClassicRequestBuilder requestBuilder, Long inventoryId, String formFieldName) {
+    public void addPlaceholderOldNewFormField(RequestBuilder requestBuilder, Long inventoryId, String formFieldName) {
         addOldNewFormField(requestBuilder, inventoryId, formFieldName, "x", "x");
     }
 
     @Override
-    public void setInventoryUpdateFormFieldsForConditionUpdate(ClassicRequestBuilder requestBuilder, Long inventoryId, String invNew, String invComplete) {
+    public void setInventoryUpdateFormFieldsForConditionUpdate(RequestBuilder requestBuilder, Long inventoryId, String invNew, String invComplete) {
         requestBuilder.addParameter("invID", Long.toString(inventoryId));
         requestBuilder.addParameter("revID", "1");
         requestBuilder.addParameter("userID", Integer.toString(bricklinkSession.getAuthenticationResult()
@@ -497,7 +495,7 @@ public class BricklinkWebServiceImpl implements BricklinkWebService {
     }
 
     @Override
-    public void setInventoryUpdateFormFieldsForExtendedDescriptionUpdate(ClassicRequestBuilder requestBuilder, Long inventoryId, String invExtended) {
+    public void setInventoryUpdateFormFieldsForExtendedDescriptionUpdate(RequestBuilder requestBuilder, Long inventoryId, String invExtended) {
         requestBuilder.addParameter("invID", Long.toString(inventoryId));
         requestBuilder.addParameter("revID", "1");
         requestBuilder.addParameter("userID", Integer.toString(bricklinkSession.getAuthenticationResult()

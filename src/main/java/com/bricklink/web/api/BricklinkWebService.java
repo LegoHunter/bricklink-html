@@ -3,8 +3,8 @@ package com.bricklink.web.api;
 import com.bricklink.api.html.model.v2.WantedItem;
 import com.bricklink.api.html.model.v2.WantedList;
 import com.bricklink.web.model.Item;
-import org.apache.hc.client5.http.classic.HttpClient;
-import org.apache.hc.core5.http.io.support.ClassicRequestBuilder;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.RequestBuilder;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -35,11 +35,11 @@ public interface BricklinkWebService {
 
     byte[] downloadWantedList(Long wantedListId, String wantedListName);
 
-    void addOldNewFormField(ClassicRequestBuilder requestBuilder, Long inventoryId, String formFieldName, String oldValue, String newValue);
+    void addOldNewFormField(RequestBuilder requestBuilder, Long inventoryId, String formFieldName, String oldValue, String newValue);
 
-    void addPlaceholderOldNewFormField(ClassicRequestBuilder requestBuilder, Long inventoryId, String formFieldName);
+    void addPlaceholderOldNewFormField(RequestBuilder requestBuilder, Long inventoryId, String formFieldName);
 
-    void setInventoryUpdateFormFieldsForConditionUpdate(ClassicRequestBuilder requestBuilder, Long inventoryId, String invNew, String invComplete);
+    void setInventoryUpdateFormFieldsForConditionUpdate(RequestBuilder requestBuilder, Long inventoryId, String invNew, String invComplete);
 
-    void setInventoryUpdateFormFieldsForExtendedDescriptionUpdate(ClassicRequestBuilder requestBuilder, Long inventoryId, String invExtended);
+    void setInventoryUpdateFormFieldsForExtendedDescriptionUpdate(RequestBuilder requestBuilder, Long inventoryId, String invExtended);
 }
