@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.3.5</version>
+        <version>3.5.7</version>
     </parent>
 
     <groupId>com.bricklink.api</groupId>
@@ -34,6 +34,15 @@
             <url>https://maven.pkg.github.com/${github.organization}/${project.artifactId}</url>
         </repository>
     </distributionManagement>
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>net.sourceforge.htmlunit</groupId>
+        <artifactId>htmlunit</artifactId>
+        <version>2.70.0</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
     <repositories>
         <repository>
@@ -159,7 +168,7 @@
             <plugin>
                 <groupId>org.openrewrite.maven</groupId>
                 <artifactId>rewrite-maven-plugin</artifactId>
-                <version>5.43.0</version>
+                <version>6.22.1</version>
                 <configuration>
                     <activeRecipes>
                         <recipe>org.openrewrite.java.spring.boot3.UpgradeSpringBoot_3_0</recipe>
@@ -167,13 +176,15 @@
                         <recipe>org.openrewrite.java.spring.boot3.UpgradeSpringBoot_3_2</recipe>
                         <recipe>org.openrewrite.java.spring.boot3.SpringBootProperties_3_3</recipe>
                         <recipe>org.openrewrite.java.spring.boot3.UpgradeSpringBoot_3_3</recipe>
+                        <recipe>org.openrewrite.java.spring.boot3.UpgradeSpringBoot_3_4</recipe>
+                        <recipe>org.openrewrite.java.spring.boot3.UpgradeSpringBoot_3_5</recipe>
                     </activeRecipes>
                 </configuration>
                 <dependencies>
                     <dependency>
                         <groupId>org.openrewrite.recipe</groupId>
                         <artifactId>rewrite-spring</artifactId>
-                        <version>5.22.0</version>
+                        <version>6.17.0</version>
                     </dependency>
                 </dependencies>
             </plugin>
