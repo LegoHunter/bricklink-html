@@ -46,10 +46,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -73,7 +70,8 @@ public class BricklinkWebServiceImpl implements BricklinkWebService {
                 .build();
         httpClient = HttpClientBuilder.create()
                 .build();
-        authenticate();
+        // authenticate();
+        log.warn("Skipping authentication");
     }
 
     @Override
@@ -92,6 +90,7 @@ public class BricklinkWebServiceImpl implements BricklinkWebService {
     }
 
     public Set<Item> getAllCatalogItemsForType(final String type) {
+        validateAuthenticated();
         Set<Item> catalogItems = Set.of();
         // POST /catalogDownload.asp?a=a
         URL downloadCatalogUrl = null;
@@ -297,7 +296,7 @@ public class BricklinkWebServiceImpl implements BricklinkWebService {
             response.close();
             bricklinkSession.setAuthenticationResult(authenticationResult);
             if (authenticationResult.getReturnCode() == 0) {
-                log.info("Bricklink Authentication successful | user_no [{}], user_id [{}], user_name", authenticationResult.getUser()
+                log.info("Bricklink Authentication successful | user_no [{}], user_id [{}], user_name [{}]", authenticationResult.getUser()
                         .getUser_no(), authenticationResult.getUser()
                         .getUser_id(), authenticationResult.getUser()
                         .getUser_name());
@@ -308,6 +307,11 @@ public class BricklinkWebServiceImpl implements BricklinkWebService {
         } catch (IOException | URISyntaxException e) {
             throw new BricklinkWebException(e);
         }
+    }
+
+    @Override
+    public boolean isAuthenticated() {
+        return Optional.ofNullable(bricklinkSession).isPresent();
     }
 
     @Override
@@ -427,6 +431,8 @@ public class BricklinkWebServiceImpl implements BricklinkWebService {
 
     @Override
     public byte[] downloadWantedList(Long wantedListId, String wantedListName) {
+        validateAuthenticated();
+
         log.info("Starting download of Bricklink Wanted List [{}]...", wantedListId);
 
         URL wantedListDownloadUrl = properties.getURL("wantedListDownload");
@@ -541,5 +547,11 @@ public class BricklinkWebServiceImpl implements BricklinkWebService {
         String paddedHexSystemTimeMillis = StringUtils.rightPad(hexSystemTimeMillis, 16, '0');
         String mid = paddedHexSystemTimeMillis + "-" + StringUtils.leftPad(Integer.toHexString(r.nextInt(65535) + 1), 4, '0') + StringUtils.leftPad(Integer.toHexString(r.nextInt(65535) + 1), 4, '0') + StringUtils.leftPad(Integer.toHexString(r.nextInt(65535) + 1), 4, '0') + StringUtils.leftPad(Integer.toHexString(r.nextInt(65535) + 1), 4, '0');
         return mid;
+    }
+
+    private void validateAuthenticated() {
+        if (!isAuthenticated()) {
+            throw new BricklinkWebException("Not authenticated");
+        }
     }
 }

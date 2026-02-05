@@ -13,6 +13,8 @@ import java.util.Set;
 public interface BricklinkWebService {
     void authenticate();
 
+    boolean isAuthenticated();
+
     void logout();
 
     void updateInventoryCondition(Long blInventoryId, String invNew, String invComplete);
