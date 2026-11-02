@@ -1,0 +1,32 @@
+name: Build Test Deploy
+
+# Thin caller for the shared LCMS Maven library pipeline (HOMELAB-26 E2):
+#   LegoHunter/lego-server-configuration/.github/workflows/maven-library-pipeline.yml
+# push feature/** or develop -> test + publish the SNAPSHOT; PR into develop -> tests only.
+# What runs on each event is documented there.
+
+on:
+  push:
+    branches:
+      - 'feature/**'
+      - develop
+  pull_request:
+    branches:
+      - develop
+    types:
+      - opened
+      - reopened
+      - synchronize
+
+# Upper bound for the shared pipeline's jobs (each job narrows it further).
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  pipeline:
+    uses: LegoHunter/lego-server-configuration/.github/workflows/maven-library-pipeline.yml@develop
+    with:
+      # Exception to the Java 21 standard: this library still depends on frozen Java 22 builds of the
+      # old library coordinates. HOMELAB-27 migrates it (and lego-command) and drops this line.
+      java-version: '22'
