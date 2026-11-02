@@ -25,7 +25,7 @@ permissions:
 
 jobs:
   pipeline:
-    uses: LegoHunter/lego-server-configuration/.github/workflows/maven-library-pipeline.yml@feature/HOMELAB-26-E2-shared-service-workflow
+    uses: LegoHunter/lego-server-configuration/.github/workflows/maven-library-pipeline.yml@develop
     with:
       # Exception to the Java 21 standard: this library still depends on frozen Java 22 builds of the
       # old library coordinates. HOMELAB-27 migrates it (and lego-command) and drops this line.
